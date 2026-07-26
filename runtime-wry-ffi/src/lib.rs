@@ -64,6 +64,8 @@ use wry::{
 use wry::WebViewBuilderExtWindows;
 #[cfg(target_os = "windows")]
 use wry::ScrollBarStyle;
+#[cfg(target_os = "linux")]
+use wry::WebViewBuilderExtUnix;
 
 static LIBRARY_NAME: OnceLock<CString> = OnceLock::new();
 static RUNTIME_VERSION: OnceLock<CString> = OnceLock::new();
@@ -4190,6 +4192,7 @@ pub extern "C" fn velox_webview_build(
             builder = builder.with_bounds(bounds);
             builder
                 .build_as_child(w)
+                .inspect_err(|err| eprintln!("velox_webview_build (child) failed: {err}"))
                 .ok()
                 .map(|webview| {
                     Box::into_raw(Box::new(VeloxWebviewHandle {
@@ -4198,8 +4201,26 @@ pub extern "C" fn velox_webview_build(
                     }))
                 })
         } else {
-            builder
-                .build(w)
+            // Building directly from the tao Window's raw window handle only works under
+            // X11: under Wayland it fails to attach the webview at all ("the window handle
+            // kind is not supported"), leaving a blank window. wry's GTK-native `build_gtk`
+            // embeds into the window's own default `gtk::Box` instead, which works under
+            // both X11 and Wayland.
+            #[cfg(target_os = "linux")]
+            let build_result = match w.default_vbox() {
+                Some(vbox) => builder.build_gtk(vbox),
+                None => {
+                    eprintln!(
+                        "velox_webview_build failed: window has no default gtk::Box (was WindowBuilderExtUnix::with_default_vbox(false) used?)"
+                    );
+                    return None;
+                }
+            };
+            #[cfg(not(target_os = "linux"))]
+            let build_result = builder.build(w);
+
+            build_result
+                .inspect_err(|err| eprintln!("velox_webview_build failed: {err}"))
                 .ok()
                 .map(|webview| {
                     Box::into_raw(Box::new(VeloxWebviewHandle {
