@@ -211,9 +211,17 @@ let package = Package(
         ], .when(configuration: .release)),
         .linkedLibrary("velox_runtime_wry_ffi"),
         .unsafeFlags(["-lntdll"], .when(platforms: [.windows])),
+        // TODO: Bundler.swift's .deb packaging never copies libvelox_runtime_wry_ffi.so
+        // into the package, so these rpaths only work for local `swift build` / `swift run`,
+        // not a shipped bundle. Needs a decision on system-installed vs. bundled-next-to-binary.
         .unsafeFlags([
-          "-Xlinker", "-rpath", "-Xlinker", "/usr/lib/x86_64-linux-gnu",
-        ], .when(platforms: [.linux])),
+          "-Xlinker", "-rpath", "-Xlinker",
+          "$ORIGIN/VeloxRuntimeWry_VeloxRuntimeWryFFI.resources/cargo-target/debug",
+        ], .when(platforms: [.linux], configuration: .debug)),
+        .unsafeFlags([
+          "-Xlinker", "-rpath", "-Xlinker",
+          "$ORIGIN/VeloxRuntimeWry_VeloxRuntimeWryFFI.resources/cargo-target/release",
+        ], .when(platforms: [.linux], configuration: .release)),
         .linkedLibrary("gtk-3", .when(platforms: [.linux])),
         .linkedLibrary("gdk-3", .when(platforms: [.linux])),
         .linkedLibrary("webkit2gtk-4.1", .when(platforms: [.linux])),
