@@ -42,7 +42,7 @@ typedef struct {
   bool show_menu_on_left_click;
 } VeloxTrayConfig;
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__linux__)
 typedef struct {
   char _unused;
 } VeloxMenuBarHandle;
@@ -454,7 +454,9 @@ bool velox_event_loop_set_activation_policy(VeloxEventLoopHandle *event_loop, Ve
 bool velox_event_loop_set_dock_visibility(VeloxEventLoopHandle *event_loop, bool visible);
 bool velox_event_loop_hide_application(VeloxEventLoopHandle *event_loop);
 bool velox_event_loop_show_application(VeloxEventLoopHandle *event_loop);
+#endif
 
+#if defined(__APPLE__) || defined(__linux__)
 VeloxMenuBarHandle *velox_menu_bar_new(void);
 VeloxMenuBarHandle *velox_menu_bar_new_with_id(const char *identifier);
 void velox_menu_bar_free(VeloxMenuBarHandle *menu);
@@ -621,7 +623,9 @@ bool velox_submenu_append_check_item(
 );
 
 bool velox_tray_set_menu(VeloxTrayHandle *handle, VeloxMenuBarHandle *menu);
+#endif
 
+#if defined(__APPLE__)
 void velox_app_state_force_launched(void);
 #endif
 
