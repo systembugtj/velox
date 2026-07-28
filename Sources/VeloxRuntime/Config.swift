@@ -30,6 +30,9 @@ public struct VeloxConfig: Codable, Sendable {
   /// Bundle configuration (optional)
   public var bundle: BundleConfig?
 
+  /// Development-only identity overrides
+  public var development: DevelopmentConfig?
+
   enum CodingKeys: String, CodingKey {
     case schema = "$schema"
     case productName
@@ -38,6 +41,7 @@ public struct VeloxConfig: Codable, Sendable {
     case app
     case build
     case bundle
+    case development
   }
 
   public init(
@@ -46,7 +50,8 @@ public struct VeloxConfig: Codable, Sendable {
     identifier: String,
     app: AppConfig = AppConfig(),
     build: BuildConfig? = nil,
-    bundle: BundleConfig? = nil
+    bundle: BundleConfig? = nil,
+    development: DevelopmentConfig? = nil
   ) {
     self.productName = productName
     self.version = version
@@ -54,6 +59,43 @@ public struct VeloxConfig: Codable, Sendable {
     self.app = app
     self.build = build
     self.bundle = bundle
+    self.development = development
+  }
+
+  /// Returns the config used by `velox dev` without mutating production identity.
+  public func applyingDevelopmentIdentity() -> VeloxConfig {
+    guard let development else { return self }
+
+    var result = self
+    result.productName = development.productName ?? productName
+    result.identifier = development.identifier ?? identifier
+
+    if let windowTitle = development.windowTitle {
+      result.app.windows = result.app.windows.map { window in
+        guard window.label == "main" else { return window }
+        var updated = window
+        updated.title = windowTitle
+        return updated
+      }
+    }
+
+    return result
+  }
+}
+
+public struct DevelopmentConfig: Codable, Sendable {
+  public var productName: String?
+  public var identifier: String?
+  public var windowTitle: String?
+
+  public init(
+    productName: String? = nil,
+    identifier: String? = nil,
+    windowTitle: String? = nil
+  ) {
+    self.productName = productName
+    self.identifier = identifier
+    self.windowTitle = windowTitle
   }
 }
 

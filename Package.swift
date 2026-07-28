@@ -483,6 +483,21 @@ let package = Package(
       ],
       path: "Sources/VeloxCLI"
     ),
+    .testTarget(
+      name: "VeloxRuntimeTests",
+      dependencies: ["VeloxRuntime"],
+      path: "Tests/VeloxRuntimeTests"
+    ),
+    .testTarget(
+      name: "VeloxBundlerTests",
+      dependencies: ["VeloxBundler", "VeloxRuntime"],
+      path: "Tests/VeloxBundlerTests"
+    ),
+    .testTarget(
+      name: "VeloxCLITests",
+      dependencies: ["VeloxCLI"],
+      path: "Tests/VeloxCLITests"
+    ),
     .plugin(
       name: "VeloxRustBuildPlugin",
       capability: .buildTool()

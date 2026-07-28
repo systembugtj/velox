@@ -100,11 +100,30 @@ velox dev --port 3000
 Features:
 - Executes `beforeDevCommand` from velox.json (e.g., `npm run dev`)
 - Waits for dev server at `devUrl` if configured
-- Builds and runs the Swift app with `VELOX_DEV_URL` set
+- On macOS, builds, bundles, ad-hoc signs, and runs the app from
+  `.build/debug/<DevelopmentProduct>.app/Contents/MacOS`
+- On other platforms, builds and runs the Swift executable with `VELOX_DEV_URL` set
 - **Dev server proxy**: When `devUrl` is set, the `app://` protocol proxies requests to your dev server, enabling HMR from tools like Vite
 - Watches for Swift file changes and rebuilds automatically
 - **Smart reload**: Frontend-only changes trigger a quick restart without rebuild
 - Graceful shutdown with Ctrl+C
+
+Use `development` to give the macOS development bundle a separate identity:
+
+```json
+{
+  "productName": "MyApp",
+  "identifier": "com.example.myapp",
+  "development": {
+    "productName": "MyApp Dev",
+    "identifier": "com.example.myapp.dev",
+    "windowTitle": "MyApp Dev"
+  }
+}
+```
+
+`velox build` keeps the production identity. `velox dev` applies the development identity
+without mutating the production configuration.
 
 #### `velox build` - Production Build
 
@@ -150,6 +169,11 @@ The CLI uses settings from `velox.json`:
   "productName": "MyApp",
   "version": "1.0.0",
   "identifier": "com.example.myapp",
+  "development": {
+    "productName": "MyApp Dev",
+    "identifier": "com.example.myapp.dev",
+    "windowTitle": "MyApp Dev"
+  },
   "build": {
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",

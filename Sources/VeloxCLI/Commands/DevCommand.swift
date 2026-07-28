@@ -38,11 +38,7 @@ private func terminateCurrentProcess(_ code: Int32) -> Never {
 func runWithFileWatching(
   processManager: ProcessManager,
   fileWatcher: FileWatcher,
-  target: String,
-  release: Bool,
-  devUrl: String?,
-  packageDirectory: URL,
-  additionalEnv: [String: String],
+  appRunner: DevelopmentAppRunner,
   needsRebuild: Bool
 ) async throws -> WatchResult {
   logger.debug("runWithFileWatching called, needsRebuild=\(needsRebuild)")
@@ -51,23 +47,7 @@ func runWithFileWatching(
     // Task 1: Run the app
     group.addTask {
       logger.debug("App task starting")
-      if needsRebuild {
-        try await processManager.runSwiftApp(
-          target: target,
-          release: release,
-          devUrl: devUrl,
-          packageDirectory: packageDirectory,
-          additionalEnv: additionalEnv
-        )
-      } else {
-        try await processManager.restartSwiftApp(
-          target: target,
-          release: release,
-          devUrl: devUrl,
-          packageDirectory: packageDirectory,
-          additionalEnv: additionalEnv
-        )
-      }
+      try await appRunner.run(needsRebuild: needsRebuild)
       logger.debug("App task completed (app exited)")
       return .appExited
     }
@@ -149,13 +129,14 @@ struct DevCommand: AsyncParsableCommand {
     logger.info("=========")
 
     // 1. Load configuration
-    let config: VeloxConfig
+    let productionConfig: VeloxConfig
     do {
-      config = try VeloxConfig.load()
+      productionConfig = try VeloxConfig.load()
       logger.info("[config] Loaded velox.json")
     } catch {
       throw ValidationError("No velox.json found. Run from project root.\n\(error)")
     }
+    let config = productionConfig.applyingDevelopmentIdentity()
 
     // 1.5. Load environment variables
     let envVars = EnvLoader.load(config: config, mode: release ? "production" : "development")
@@ -216,6 +197,15 @@ struct DevCommand: AsyncParsableCommand {
     var shouldExit = false
     var needsRebuild = true  // First run always builds
     let devUrl = effectiveDevUrl(from: config)
+    let appRunner = DevelopmentAppRunner(
+      processManager: processManager,
+      target: executableTarget,
+      release: release,
+      devUrl: devUrl,
+      packageDirectory: packageDirectory,
+      config: config,
+      additionalEnv: envVars
+    )
 
     while !shouldExit {
       do {
@@ -228,34 +218,14 @@ struct DevCommand: AsyncParsableCommand {
         // Run app and file watcher concurrently
         if noWatch {
           // No watching - just run the app and exit when it's done
-          if needsRebuild {
-            try await processManager.runSwiftApp(
-              target: executableTarget,
-              release: release,
-              devUrl: devUrl,
-              packageDirectory: packageDirectory,
-              additionalEnv: envVars
-            )
-          } else {
-            try await processManager.restartSwiftApp(
-              target: executableTarget,
-              release: release,
-              devUrl: devUrl,
-              packageDirectory: packageDirectory,
-              additionalEnv: envVars
-            )
-          }
+          try await appRunner.run(needsRebuild: needsRebuild)
           shouldExit = true
         } else {
           // Watch mode - run app and file watcher concurrently
           let result = try await runWithFileWatching(
             processManager: processManager,
             fileWatcher: fileWatcher!,
-            target: executableTarget,
-            release: release,
-            devUrl: devUrl,
-            packageDirectory: packageDirectory,
-            additionalEnv: envVars,
+            appRunner: appRunner,
             needsRebuild: needsRebuild
           )
 

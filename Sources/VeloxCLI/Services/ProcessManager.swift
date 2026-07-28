@@ -11,6 +11,44 @@ actor ProcessManager {
   private var backgroundProcesses: [String: Process] = [:]
   private var currentAppProcess: Process?
 
+  func runExecutable(
+    at executableURL: URL,
+    workingDirectory: URL,
+    devUrl: String?,
+    additionalEnv: [String: String] = [:]
+  ) async throws {
+    guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
+      throw ProcessError.runtimeError("Executable not found: \(executableURL.path)")
+    }
+
+    let process = Process()
+    process.executableURL = executableURL
+    process.currentDirectoryURL = workingDirectory
+    var environment = ProcessInfo.processInfo.environment.merging(additionalEnv) {
+      _, override in override
+    }
+    if let devUrl {
+      environment["VELOX_DEV_URL"] = devUrl
+    }
+    process.environment = environment
+    process.standardOutput = FileHandle.standardOutput
+    process.standardError = FileHandle.standardError
+    currentAppProcess = process
+
+    try process.run()
+    await waitForExit(process)
+    currentAppProcess = nil
+
+    if process.terminationReason == .uncaughtSignal {
+      throw ProcessError.terminated
+    }
+    guard process.terminationStatus == 0 else {
+      throw ProcessError.runtimeError(
+        "App exited with status \(process.terminationStatus)"
+      )
+    }
+  }
+
   /// Spawns a background process that runs until explicitly terminated
   func spawnBackgroundProcess(command: String, label: String) async throws {
     let process = Process()
@@ -299,5 +337,11 @@ actor ProcessManager {
     }
 
     backgroundProcesses.removeAll()
+  }
+
+  private func waitForExit(_ process: Process) async {
+    await withCheckedContinuation { continuation in
+      process.terminationHandler = { _ in continuation.resume() }
+    }
   }
 }

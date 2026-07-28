@@ -158,16 +158,12 @@ public struct VeloxBundler {
     }
     try FileManager.default.copyItem(at: executablePath, to: destExecutable)
 
-    // Copy velox.json to Resources
-    let veloxJsonSource = packageDirectory.appendingPathComponent("velox.json")
+    // Persist the effective config used for this bundle.
     let veloxJsonDest = resourcesPath.appendingPathComponent("velox.json")
-    if FileManager.default.fileExists(atPath: veloxJsonSource.path) {
-      if FileManager.default.fileExists(atPath: veloxJsonDest.path) {
-        try FileManager.default.removeItem(at: veloxJsonDest)
-      }
-      try FileManager.default.copyItem(at: veloxJsonSource, to: veloxJsonDest)
-      logger.info("[bundle] Copied velox.json")
-    }
+    let configEncoder = JSONEncoder()
+    configEncoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    try configEncoder.encode(config).write(to: veloxJsonDest, options: .atomic)
+    logger.info("[bundle] Wrote effective velox.json")
 
     // Copy assets if frontendDist is configured
     if let frontendDist = config.build?.frontendDist {
@@ -332,7 +328,9 @@ public struct VeloxBundler {
       args.append(entitlements.path)
     }
 
-    args.append("--timestamp")
+    if identity != "-" {
+      args.append("--timestamp")
+    }
     args.append(bundleURL.path)
 
     let exitCode = try runProcess(
