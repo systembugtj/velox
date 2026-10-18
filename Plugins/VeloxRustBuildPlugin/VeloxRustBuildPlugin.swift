@@ -109,6 +109,10 @@ private func cargoArguments(
 
 private func cargoEnvironment() -> [String: String] {
   var environment = ProcessInfo.processInfo.environment
+#if os(macOS)
+  environment["CARGO_PROFILE_RELEASE_STRIP"] = "none"
+  environment["CARGO_PROFILE_RELEASE_BUILD_OVERRIDE_STRIP"] = "none"
+#endif
   if shouldUseOfflineCargo() {
     environment["CARGO_NET_OFFLINE"] = "true"
   }

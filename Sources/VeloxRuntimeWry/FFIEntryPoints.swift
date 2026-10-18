@@ -9,7 +9,7 @@ import Glibc
 #endif
 
 @_cdecl("velox_custom_protocol_handler_bridge")
-func velox_custom_protocol_handler_bridge(
+public func velox_custom_protocol_handler_bridge(
   _ requestPointer: UnsafePointer<VeloxCustomProtocolRequest>?,
   _ responsePointer: UnsafeMutablePointer<VeloxCustomProtocolResponse>?,
   _ userData: UnsafeMutableRawPointer?
@@ -133,7 +133,7 @@ func velox_custom_protocol_handler_bridge(
 }
 
 @_cdecl("velox_custom_protocol_response_bridge")
-func velox_custom_protocol_response_bridge(_ userData: UnsafeMutableRawPointer?) {
+public func velox_custom_protocol_response_bridge(_ userData: UnsafeMutableRawPointer?) {
   guard let userData else { return }
   let storage = Unmanaged<VeloxCustomProtocolResponseStorage>
     .fromOpaque(userData)

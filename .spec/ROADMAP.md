@@ -27,3 +27,4 @@
 | 0023 | [Android Project Generation and Workflow (child of 0001)](rfc/0023-android-project-workflow.md) | Draft |
 | 0024 | [Generic Global Configuration Support](rfc/0024-global-runtime-configuration.md) | Draft |
 | 0025 | [Framework-Level Single Instance Support](rfc/0025-single-instance-support.md) | Draft |
+| 0026 | [macOS Release FFI Build Compatibility](rfc/0026-macos-release-ffi-build.md) | Approved |
