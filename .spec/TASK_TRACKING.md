@@ -27,4 +27,6 @@
   - [ ] Implement RFC 0023: Android Project Generation and Workflow (child of 0001) (RFC 0023)
 - [ ] Implement RFC 0024: Generic Global Configuration Support (RFC 0024)
 - [ ] Implement RFC 0025: Framework-Level Single Instance Support (RFC 0025)
-- [ ] Implement RFC 0026: macOS Release FFI Build Compatibility (RFC 0026)
+
+## Done
+- [x] Implement RFC 0026: macOS Release FFI Build Compatibility (RFC 0026)

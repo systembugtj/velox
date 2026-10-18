@@ -1,6 +1,6 @@
 # RFC 0026: macOS Release FFI Build Compatibility
 
-**Status:** Approved
+**Status:** Implemented
 
 ## Summary
 
